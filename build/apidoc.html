@@ -1,0 +1,265 @@
+<div class="apidocDiv">
+<style>
+/*csslint
+*/
+.apidocDiv {
+    background: #fff;
+    font-family: Arial, Helvetica, sans-serif;
+}
+.apidocDiv a[href] {
+    color: #33f;
+    font-weight: bold;
+    text-decoration: none;
+}
+.apidocDiv a[href]:hover {
+    text-decoration: underline;
+}
+.apidocCodeCommentSpan {
+    background: #bbf;
+    color: #000;
+    display: block;
+}
+.apidocCodeKeywordSpan {
+    color: #d00;
+    font-weight: bold;
+}
+.apidocCodePre {
+    background: #eef;
+    border: 1px solid;
+    color: #777;
+    padding: 5px;
+    white-space: pre-wrap;
+}
+.apidocFooterDiv {
+    margin-top: 20px;
+    text-align: center;
+}
+.apidocModuleLi {
+    margin-top: 10px;
+}
+.apidocSectionDiv {
+    border-top: 1px solid;
+    margin-top: 20px;
+}
+.apidocSignatureSpan {
+    color: #777;
+    font-weight: bold;
+}
+</style>
+<h1>api documentation for
+    <a
+
+        href="https://github.com/JakeSidSmith/react-fastclick"
+
+    >react-fastclick (v3.0.1)</a>
+</h1>
+<h4>Fast Touch Events for React</h4>
+<div class="apidocSectionDiv"><a
+    href="#apidoc.tableOfContents"
+    id="apidoc.tableOfContents"
+><h1>table of contents</h1></a><ol>
+
+    <li class="apidocModuleLi"><a href="#apidoc.module.react-fastclick">module react-fastclick</a><ol>
+
+        <li>
+
+            <a class="apidocElementLiA" href="#apidoc.element.react-fastclick.react-fastclick">
+            function <span class="apidocSignatureSpan"></span>react-fastclick
+            <span class="apidocSignatureSpan">()</span>
+            </a>
+
+        </li>
+
+    </ol></li>
+
+</ol></div>
+
+<div class="apidocSectionDiv">
+<h1><a href="#apidoc.module.react-fastclick" id="apidoc.module.react-fastclick">module react-fastclick</a></h1>
+
+
+    <h2>
+        <a href="#apidoc.element.react-fastclick.react-fastclick" id="apidoc.element.react-fastclick.react-fastclick">
+        function <span class="apidocSignatureSpan"></span>react-fastclick
+        <span class="apidocSignatureSpan">()</span>
+        </a>
+    </h2>
+    <ul>
+    <li>description and source-code<pre class="apidocCodePre">function initializeReactFastclick() {
+  var originalCreateElement = React.createElement;
+
+  // Moved if Math.abs(downX - upX) &#x3e; MOVE_THRESHOLD;
+  var MOVE_THRESHOLD = 8;
+  var TOUCH_DELAY = 1000;
+
+  var touchKeysToStore = [
+    &#x27;clientX&#x27;,
+    &#x27;clientY&#x27;,
+    &#x27;pageX&#x27;,
+    &#x27;pageY&#x27;,
+    &#x27;screenX&#x27;,
+    &#x27;screenY&#x27;,
+    &#x27;radiusX&#x27;,
+    &#x27;radiusY&#x27;
+  ];
+
+  var touchEvents = {
+    downPos: {},
+    lastPos: {}
+  };
+
+  var isDisabled = function (element) {
+    if (!element) {
+      return false;
+    }
+    var disabled = element.getAttribute(&#x27;disabled&#x27;);
+
+    return disabled !== false &#x26;&#x26; disabled !== null;
+  };
+
+  var focus = function (event, target) {
+    var myTarget = target || event.currentTarget;
+
+    if (!myTarget || isDisabled(myTarget)) {
+      return;
+    }
+
+    myTarget.focus();
+  };
+
+  var handleType = {
+    input: function (event) {
+      focus(event);
+      event.stopPropagation();
+    },
+    textarea: function (event) {
+      focus(event);
+      event.stopPropagation();
+    },
+    select: function (event) {
+      focus(event);
+      event.stopPropagation();
+    },
+    label: function (event) {
+      var input;
+
+      var forTarget = event.currentTarget.getAttribute(&#x27;for&#x27;);
+
+      if (forTarget) {
+        input = document.getElementById(forTarget);
+      } else {
+        input = event.currentTarget.querySelectorAll(&#x27;input, textarea, select&#x27;)[0];
+      }
+
+      if (input) {
+        focus(event, input);
+      }
+    }
+  };
+
+  var fakeClickEvent = function (event) {
+    if (typeof event.persist === &#x27;function&#x27;) {
+      event.persist();
+    }
+
+    event.fastclick = true;
+    event.type = &#x27;click&#x27;;
+    event.button = 0;
+  };
+
+  var copyTouchKeys = function (touch, target) {
+    if (typeof target.persist === &#x27;function&#x27;) {
+      target.persist();
+    }
+
+    if (touch) {
+      for (var i = 0; i &#x3c; touchKeysToStore.length; i += 1) {
+        var key = touchKeysToStore[i];
+        target[key] = touch[key];
+      }
+    }
+  };
+
+  var noTouchHappened = function () {
+    return !touchEvents.touched &#x26;&#x26; (
+      !touchEvents.lastTouchDate || new Date().getTime() &#x3e; touchEvents.lastTouchDate + TOUCH_DELAY
+    );
+  };
+
+  var invalidateIfMoreThanOneTouch = function (event) {
+    touchEvents.invalid = event.touches &#x26;&#x26; event.touches.length &#x3e; 1 || touchEvents.invalid;
+  };
+
+  var onMouseEvent = function (callback, event) {
+    // Prevent any mouse events if we touched recently
+    if (typeof callback === &#x27;function&#x27; &#x26;&#x26; noTouchHappened()) {
+      callback(event);
+    }
+    if (event.type === &#x27;click&#x27;) {
+      touchEvents.invalid = false;
+      touchEvents.touched = false;
+      touchEvents.moved = false;
+    }
+  };
+
+  var onTouchStart = function (callback, event) {
+    touchEvents.invalid = false;
+    touchEvents.moved = false;
+    touchEvents.touched = true;
+    touchEvents.lastTouchDate = new Date().getTime();
+
+    copyTouchKeys(event.touches[0], touchEvents.downPos);
+    copyTouchKeys(event.touches[0], touchEvents.lastPos);
+
+    invalidateIfMoreThanOneTouch(event);
+
+    if (typeof callback === &#x27;function&#x27;) {
+      callback(event);
+    }
+  };
+
+  var onTouchMove = function (callback, event) {
+    touchEvents.touched = true;
+    touchEvents.lastTouchDate = new Date().getTime();
+
+    copyTouchKeys(event.touches[0], touchEvents.lastPos);
+
+    invalidateIfMoreThanOneTouch(event);
+
+    if (Math.abs(touchEvents.downPos.clientX - touchEvents.lastPos.clientX) &#x3e; MOVE_THRESHOLD ||
+      Math.abs(touchEvents.downPos.clientY - touchEvents.lastPos.clientY) &#x3e; MOVE_THRESHOLD) {
+      touchEvents.moved = true;
+    }
+
+    if (typeof callback === &#x27;function&#x27;) {
+      callback(event);
+    }
+  };
+
+  var onTouchEnd = function (callback, onClick, type, event) {
+    touchEvents.touched = true;
+    touchEvents.lastTouchDate = new Date().getTime();
+
+    invalidateIfMoreThanOneTouch(event);
+
+    if (typeof callback === &#x27;function&#x27;) {
+      callback(event);
+    }
+
+    if (!touchEvents.invalid &#x26;&#x26; !touchEvents.moved) {
+      var box = event.currentTarget.getBoundingClientRect();
+
+      if (touchEvents.lastPos.clientX - (touchEvents.lastPos.radiusX || 0) &#x3c;= box.right &#x26;&#x26;
+        touchEve ...</pre></li>
+    <li>example usage<pre class="apidocCodePre">n/a</pre></li>
+    </ul>
+
+
+</div>
+
+<div class="apidocFooterDiv">
+    [ this document was created with
+    <a href="https://github.com/kaizhu256/node-utility2" target="_blank">utility2</a>
+    ]
+</div>
+</div>
